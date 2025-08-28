@@ -165,7 +165,7 @@ if [ "$INSTALL_INDI" = "true" ]; then
     [ -f build-indi/install_manifest.txt ] && echo "Deleting INDI"; cat build-indi/install_manifest.txt | sudo xargs rm -f
 
     echo "Installing INDI core..."
-    [ ! -d "indi" ] && { git clone --depth=1 https://github.com/indi/indi.git || { echo "Failed to clone indi"; exit 1; } }
+    [ ! -d "indi" ] && { git clone --depth=1 https://github.com/indilib/indi.git || { echo "Failed to clone indi"; exit 1; } }
     cd indi
     git fetch origin
     git switch -d --discard-changes $INDI_COMMIT

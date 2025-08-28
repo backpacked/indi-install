@@ -186,7 +186,7 @@ if [ "$INSTALL_3RDPARTY" = true ]; then
         find "$BUILD_DIR/build" -name "install_manifest.txt" -exec cat {} \; | sudo xargs rm -f 2>/dev/null || true
     fi
     echo "Installing INDI 3rd party..."
-    [ ! -d "indi-3rdparty" ] && { git clone --depth=1 https://github.com/indi/indi-3rdparty.git || { echo "Failed to clone indi 3rdparty"; exit 1; } }
+    [ ! -d "indi-3rdparty" ] && { git clone --depth=1 https://github.com/indilib/indi-3rdparty.git || { echo "Failed to clone indi 3rdparty"; exit 1; } }
     cd indi-3rdparty
     git fetch origin
     git switch -d --discard-changes $INDI_3RD_COMMIT

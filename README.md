@@ -144,7 +144,7 @@ sudo rm -rf ~/Projects/indi-build-stable
 ```
 
 ## Component Versions
-[!Note] These can be edited in the `build-indi-stable.sh`
+> **Note**: These can be edited in the `build-indi-stable.sh`
 
 | Component         | Default Version                      | Repository                                      |
 |-------------------|--------------------------------------|-------------------------------------------------|
@@ -213,4 +213,4 @@ This project is open source and available under the Apache License Version 2.0.
 - [Cloudy Nights Forum](https://www.cloudynights.com/forum/75-astro-imaging-software-and-processing/) - Astronomy software discussions
 - [Stargazers Lounge](https://stargazerslounge.com/) - Astronomy community forum
 
-[!Note] These scripts are designed for stable versions. For bleeding-edge development versions, please refer to the respective project repositories.
+> **Note**: These scripts are designed for stable versions. For bleeding-edge development versions, please refer to the respective project repositories.

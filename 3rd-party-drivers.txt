@@ -1,0 +1,6 @@
+# libs to install
+libasi
+# My selected INDI drivers
+indi-asi
+indi-eqmod
+#indi-qhy (commented out)

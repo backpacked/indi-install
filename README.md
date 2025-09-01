@@ -1,5 +1,7 @@
 # INDI Stable Build Scripts
 
+> Note: This is not a release version. I am still working on a script that allows me to customize the installation of indiserver with the 3rd-party drivers I want. Use at your own risk.
+
 A collection of scripts to build and install INDI (Instrument-Neutral Distributed Interface) core, 3rd party drivers, and related astronomy software from source with stable versions.
 
 ## Overview

@@ -32,7 +32,7 @@ usage() {
   echo "  --no-indi             Skip Indi installation"
   echo "  --3rdparty FILE       Install only drivers from FILE (one per line)"
   echo "  --no-3rdparty         Skip all 3rd party drivers installation"
-  echo "  --stellasolver        Install stellarsolver"
+  echo "  --stellarsolver        Install stellarsolver"
   echo "  --kstars              Install KStars"
   echo "  --phd2 [VERSION]      Install PHD2 (optional: specify version, default: v2.6.12)"
   echo "  --help                Show this help message"
@@ -42,7 +42,7 @@ usage() {
   echo "  $0 --no-libxisf                # Install INDI + all 3rd party (no LibXISF)"
   echo "  $0 --3rdparty my_drivers.txt   # Install only specific drivers"
   echo "  $0 --no-3rdparty               # Install only INDI core (no 3rd party)"
-  echo "  $0 --stellasolver --kstars     # Install INDI + stellarsolver + KStars"
+  echo "  $0 --stellarsolver --kstars     # Install INDI + stellarsolver + KStars"
   echo "  $0 --phd2 v2.6.11              # Install INDI + PHD2 with specific version"
   echo "  $0 --kstars --phd2             # Install INDI + KStars + PHD2"
 }
@@ -74,7 +74,7 @@ while [[ $# -gt 0 ]]; do
       INSTALL_ALL_3RDPARTY=false
       shift
       ;;
-    --stellasolver)
+    --stellarsolver)
       INSTALL_STELLAR=true
       shift
       ;;

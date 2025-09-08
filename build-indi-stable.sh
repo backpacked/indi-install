@@ -215,7 +215,7 @@ if [ "$INSTALL_LIBXISF" = true ]; then
   [ -f build-libXISF/install_manifest.txt ] && echo "Deleting libXISF"; cat build-libXISF/install_manifest.txt | sudo xargs rm -f
   
   echo "Installing LibXISF..."
-  gitclone "https://gitea.nouspiro.space/nou/libXISF.git" "libXISF" "$LIBXISF_COMMIT"
+  gitfunction "https://gitea.nouspiro.space/nou/libXISF.git" "libXISF" "$LIBXISF_COMMIT"
   
   [ ! -d ../build-libXISF ] && { cmake -B ../build-libXISF ../libXISF -DCMAKE_BUILD_TYPE=Release -DUSE_BUNDLED_ZLIB=OFF || { echo "LibXISF configuration failed"; exit 1; } }
   cd ../build-libXISF
@@ -235,7 +235,7 @@ if [ "$INSTALL_INDI" = "true" ]; then
   install_deps indi
 
   echo "Installing INDI core..."
-  gitclone "https://github.com/indilib/indi.git" "indi" "$INDI_COMMIT"
+  gitfunction "https://github.com/indilib/indi.git" "indi" "$INDI_COMMIT"
 
   [ ! -d ../build-indi ] && { cmake -B ../build-indi ../indi -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release || { echo "INDI configuration failed"; exit 1; } }
   cd ../build-indi
@@ -260,7 +260,7 @@ if [ "$INSTALL_3RDPARTY" = true ]; then
   install_deps indi-3rdparty
 
   echo "Installing INDI 3rd party..."
-  gitclone "https://github.com/indilib/indi-3rdparty.git" "indi-3rdparty" "$INDI_3RD_COMMIT"
+  gitfunction "https://github.com/indilib/indi-3rdparty.git" "indi-3rdparty" "$INDI_3RD_COMMIT"
   
   if [ "$INSTALL_ALL_3RDPARTY" = true ]; then
     # Build all 3rd party drivers
@@ -323,7 +323,7 @@ if [ "$INSTALL_STELLAR" = true ]; then
   install_deps stellarsolver
   
   echo "Installing stellarsolver..."
-  gitclone "https://github.com/rlancaste/stellarsolver.git" "stellarsolver" "$STELLAR_COMMIT"
+  gitfunction "https://github.com/rlancaste/stellarsolver.git" "stellarsolver" "$STELLAR_COMMIT"
 
   [ ! -d ../build-stellarsolver ] && { cmake -B ../build-stellarsolver ../stellarsolver -DCMAKE_BUILD_TYPE=Release || { echo "Stellarsolver configuration failed"; exit 1; } }
   cd ../build-stellarsolver
@@ -343,7 +343,7 @@ if [ "$INSTALL_KSTARS" = true ]; then
   install_deps kstars
 
   echo "Installing KStars..."
-  gitclone "https://invent.kde.org/education/kstars.git" "kstars" "$KSTARS_COMMIT"
+  gitfunction "https://invent.kde.org/education/kstars.git" "kstars" "$KSTARS_COMMIT"
 
   [ ! -d ../build-kstars ] && { cmake -B ../build-kstars -DBUILD_TESTING=Off ../kstars -DCMAKE_BUILD_TYPE=Release || { echo "KStars configuration failed"; exit 1; } }
   cd ../build-kstars
@@ -363,7 +363,7 @@ if [ "$INSTALL_PHD" = true ]; then
   install_deps phd2
   
   echo "Installing PHD2 ($PHD_COMMIT)..."
-  gitclone "https://github.com/OpenPHDGuiding/phd2.git" "phd2" "$PHD_COMMIT"
+  gitfunction "https://github.com/OpenPHDGuiding/phd2.git" "phd2" "$PHD_COMMIT"
 
 
   [ ! -d ../build-phd2 ] && cmake -B ../build-phd2 -DCMAKE_BUILD_TYPE=Release || { echo "PHD2 configuration failed"; exit 1; }

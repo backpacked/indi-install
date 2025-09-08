@@ -180,31 +180,28 @@ gitfunction() {
 
   if [ ! -d "$target_dir/.git" ]; then
     echo "Cloning $repo_url into $target_dir at $commit..."
-    git clone --depth=1 "$repo_url" "$target_dir" || { echo "Failed to clone $repo_url"; exit 1; }
-    cd "$target_dir" || exit 1
-  else
-    echo "Updating $target_dir to $commit..."
-    cd "$target_dir" || { echo "Failed to cd into $target_dir"; exit 1; }
-    git fetch --all --tags --prune --depth=1 || { echo "Failed to fetch from $repo_url"; exit 1; }
+    git clone --branch "$commit" --depth=1 "$repo_url" "$target_dir" || { echo "Failed to clone $repo_url"; exit 1; }
+    return
   fi
 
-  # Detect commit type
-  if git rev-parse --verify --quiet "$commit^{commit}" >/dev/null 2>&1; then
-    # Commit SHA
-    echo "Checking out commit SHA $commit..."
-    git checkout --detach "$commit"
-  elif git show-ref --verify --quiet "refs/tags/$commit"; then
-    # Tag
-    echo "Checking out tag $commit..."
-    git checkout "tags/$commit" -b "tag-$commit" || git checkout "tags/$commit"
-  elif git show-ref --verify --quiet "refs/remotes/$commit"; then
-    # Remote branch (e.g., origin/stable-3.7.8)
+  echo "Updating $target_dir to $commit..."
+  cd "$target_dir" || { echo "Failed to cd into $target_dir"; exit 1; }
+
+  # If it's a tag (matches remote tag list) → use your requested fetch style
+  if git ls-remote --tags origin | grep -q "refs/tags/$commit$"; then
+    git fetch --depth=1 origin tag "$commit" || { echo "Failed to fetch tag $commit from $repo_url"; exit 1; }
+    git checkout "$commit" || { echo "Failed to checkout $commit in $target_dir"; exit 1; }
+
+  # Remote branch form: origin/branch
+  elif [[ "$commit" == origin/* ]]; then
     branch="${commit#origin/}"
-    echo "Checking out branch $branch from origin..."
-    git checkout -B "$branch" "$commit"
+    git fetch --depth=1 origin "$branch" || { echo "Failed to fetch branch $branch from $repo_url"; exit 1; }
+    git checkout -B "$branch" "$commit" || { echo "Failed to checkout $commit in $target_dir"; exit 1; }
+
+  # Commit SHA or local branch/tag name
   else
-    echo "Warning: Could not resolve $commit in $repo_url"
-    exit 1
+    git fetch --depth=1 origin "$commit" || git fetch --depth=1 --tags origin
+    git checkout --detach "$commit" 2>/dev/null || git checkout "$commit" || { echo "Failed to checkout $commit in $target_dir"; exit 1; }
   fi
 }
 

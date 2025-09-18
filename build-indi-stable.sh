@@ -347,8 +347,13 @@ fi
 
 # Install PHD2 if requested
 if [ "$INSTALL_PHD" = true ]; then
-  echo "Cleaning up previous PHD2 installations..."
-  [ -f build-phd2/install_manifest.txt ] && echo "Deleting PHD2"; cat build-phd2/install_manifest.txt | sudo xargs rm -f
+  PHD2_BUILD_DIR=$ROOTDIR/build_phd2
+
+  # Cleanup 3rd party builds
+  if [ -d "$PHD2_BUILD_DIR" ]; then
+      echo "Cleaning up previous PHD2 installations..."
+      find "$PHD2_BUILD_DIR" -name "install_manifest.txt" -exec cat {} \; | sudo xargs rm -f 2>/dev/null || true
+  fi
 
   # Install Dependencies
   install_deps phd2
@@ -356,11 +361,14 @@ if [ "$INSTALL_PHD" = true ]; then
   echo "Installing PHD2 ($PHD_COMMIT)..."
   gitfunction "https://github.com/OpenPHDGuiding/phd2.git" "phd2" "$PHD_COMMIT"
 
-
-  [ ! -d ../build-phd2 ] && cmake -B ../build-phd2 -DCMAKE_BUILD_TYPE=Release || { echo "PHD2 configuration failed"; exit 1; }
-  cd ../build-phd2
+  mkdir -p "$3RD_PARTY_BUILD_DIR"
+  cd "$3RD_PARTY_BUILD_DIR"
+    
+  cmake -DCMAKE_BUILD_TYPE=Release "$ROOTDIR/phd2" || { echo "PHD2 configuration failed"; exit 1; }
   make -j $JOBS || { echo "PHD2 compilation failed"; exit 1; }
   sudo make install || { echo "PHD2 installation failed"; exit 1; }
+
+  cd "$ROOTDIR"
 else
   echo "Skipping PHD2 installation"
 fi

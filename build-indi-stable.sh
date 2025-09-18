@@ -12,7 +12,7 @@ LIBXISF_COMMIT="v0.2.13"
 INDI_COMMIT="v2.1.5"
 INDI_3RD_COMMIT="v2.1.5"
 STELLAR_COMMIT="2.7"
-KSTARS_COMMIT="origin/stable-3.7.8"
+KSTARS_COMMIT="stable-3.7.8"
 PHD_COMMIT="v2.6.12"
 
 INSTALL_INDI=true
@@ -191,12 +191,6 @@ gitfunction() {
   if git ls-remote --tags origin | grep -q "refs/tags/$commit$"; then
     git fetch --depth=1 origin tag "$commit" || { echo "Failed to fetch tag $commit from $repo_url"; exit 1; }
     git checkout "$commit" || { echo "Failed to checkout $commit in $target_dir"; exit 1; }
-
-  # Remote branch form: origin/branch
-  elif [[ "$commit" == origin/* ]]; then
-    branch="${commit#origin/}"
-    git fetch --depth=1 origin "$branch" || { echo "Failed to fetch branch $branch from $repo_url"; exit 1; }
-    git checkout -B "$branch" "$commit" || { echo "Failed to checkout $commit in $target_dir"; exit 1; }
 
   # Commit SHA or local branch/tag name
   else

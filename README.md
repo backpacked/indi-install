@@ -75,7 +75,9 @@ Installs all required system dependencies for INDI and related software.
 
 ## 3rd Party Drivers File Format
 
-Create a 3rd-party-drivers.txt file with one driver per line:
+Create a 3rd-party-drivers.txt file with one driver per line.
+Make sure that the libs required by the drivers are listed first.
+Refer to the diver documentation on indi-3rdparty repo for details.
 
 ```txt
 # Libs

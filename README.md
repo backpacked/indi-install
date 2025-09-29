@@ -194,8 +194,8 @@ This project is open source and available under the Apache License Version 2.0.
 - [PHD2 Guiding](https://openphdguiding.org/) - Official PHD2 guiding software site
 
 ### GitHub Repositories
-- [INDI Core](https://github.com/indi/indi) - Main INDI library and server
-- [INDI 3rd Party Drivers](https://github.com/indi/indi-3rdparty) - Device-specific drivers
+- [INDI Core](https://github.com/indilib/indi) - Main INDI library and server
+- [INDI 3rd Party Drivers](https://github.com/indilib/indi-3rdparty) - Device-specific drivers
 - [LibXISF](https://gitea.nouspiro.space/nou/libXISF) - XISF file format library
 - [StellarSolver](https://github.com/rlancaste/stellarsolver) - Astronomical image solving
 - [KStars](https://invent.kde.org/education/kstars) - KStars source code

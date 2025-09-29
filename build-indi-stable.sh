@@ -15,10 +15,10 @@ STELLAR_COMMIT="2.7"
 KSTARS_COMMIT="stable-3.7.8"
 PHD_COMMIT="v2.6.12"
 
-INSTALL_INDI=true
-INSTALL_LIBXISF=true
-INSTALL_3RDPARTY=true
-INSTALL_ALL_3RDPARTY=true
+INSTALL_INDI=false
+INSTALL_LIBXISF=false
+INSTALL_3RDPARTY=false
+INSTALL_ALL_3RDPARTY=false
 INSTALL_STELLAR=false
 INSTALL_KSTARS=false
 INSTALL_PHD=false
@@ -28,34 +28,41 @@ LIBS_LIST_FILE=""
 usage() {
   echo "Usage: $0 [OPTIONS]"
   echo "Options:"
-  echo "  --no-libxisf          Skip LibXISF installation"
-  echo "  --no-indi             Skip Indi installation"
+  echo "  --indi                Install Indi"
+  echo "  --libxisf             Install LibXISF"
   echo "  --3rdparty FILE       Install only drivers from FILE (one per line)"
   echo "  --no-3rdparty         Skip all 3rd party drivers installation"
-  echo "  --stellarsolver        Install stellarsolver"
+  echo "  --all-3rdparty        Install all 3rd-party drivers"
+  echo "  --stellarsolver       Install stellarsolver"
   echo "  --kstars              Install KStars"
   echo "  --phd2 [VERSION]      Install PHD2 (optional: specify version, default: v2.6.12)"
+  echo "  --all                 Install Everything"
   echo "  --help                Show this help message"
   echo ""
   echo "Examples:"
-  echo "  $0                             # Install INDI + LibXISF + all 3rd party (default)"
-  echo "  $0 --no-libxisf                # Install INDI + all 3rd party (no LibXISF)"
-  echo "  $0 --3rdparty my_drivers.txt   # Install only specific drivers"
-  echo "  $0 --no-3rdparty               # Install only INDI core (no 3rd party)"
-  echo "  $0 --stellarsolver --kstars     # Install INDI + stellarsolver + KStars"
-  echo "  $0 --phd2 v2.6.11              # Install INDI + PHD2 with specific version"
-  echo "  $0 --kstars --phd2             # Install INDI + KStars + PHD2"
+  echo "  $0                                    # Show Usage"
+  echo "  $0 --indi                             # Install INDI"
+  echo "  $0 --libxisf                          # Install LibXISF"
+  echo "  $0 --3rdparty my_drivers.txt          # Install only specific drivers"
+  echo "  $0 --no-3rdparty                      # Do not install 3rd party"
+  echo "  $0 --all-3rdparty                     # Install all 3rd-party drivers"
+  echo "  $0 --indi --stellarsolver --kstars    # Install INDI + stellarsolver + KStars"
+  echo "  $0 --phd2 v2.6.11                     # Install INDI + PHD2 with specific version"
+  echo "  $0 --indi --kstars --phd2             # Install INDI + KStars + PHD2"
+  echo "  $0 --all                              # Install INDI + liXISF+ all-3rd-party + stellarsolver + KStars + PHD2"
 }
+
+# Show usage and exit if no arguments were provided
+if [[ $# -eq 0 ]]; then
+  usage
+  exit 0
+fi
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
   case $1 in
-    --no-libxisf)
-      INSTALL_LIBXISF=false
-      shift
-      ;;
-    --no-indi)
-      INSTALL_INDI=false
+    --indi)
+      INSTALL_INDI=true
       shift
       ;;
     --3rdparty)
@@ -69,9 +76,18 @@ while [[ $# -gt 0 ]]; do
           exit 1
       fi
       ;;
+    --libxisf)
+      INSTALL_LIBXISF=true
+      shift
+      ;;
     --no-3rdparty)
       INSTALL_3RDPARTY=false
       INSTALL_ALL_3RDPARTY=false
+      shift
+      ;;
+    --all-3rdparty)
+      INSTALL_3RDPARTY=false
+      INSTALL_ALL_3RDPARTY=true
       shift
       ;;
     --stellarsolver)
@@ -92,7 +108,19 @@ while [[ $# -gt 0 ]]; do
           shift
       fi
       ;;
+    --all)
+      INSTALL_INDI=true
+      INSTALL_LIBXISF=true
+      INSTALL_ALL_3RDPARTY=true
+      INSTALL_STELLAR=true
+      INSTALL_KSTARS=true
+      INSTALL_PHD=true
+      ;;
     --help)
+      usage
+      exit 0
+      ;;
+    "")
       usage
       exit 0
       ;;
@@ -202,6 +230,7 @@ gitfunction() {
 
 # Install LibXISF if requested
 if [ "$INSTALL_LIBXISF" = true ]; then
+  cd "$ROOTDIR"
   echo "Cleaning up previous LibXISF installations..."
   [ -f build-libXISF/install_manifest.txt ] && echo "Deleting libXISF"; cat build-libXISF/install_manifest.txt | sudo xargs rm -f
   
@@ -214,11 +243,12 @@ if [ "$INSTALL_LIBXISF" = true ]; then
   sudo make install || { echo "LibXISF installation failed"; exit 1; }
   cd "$ROOTDIR"
 else
-  echo "Skipping LibXISF installation as requested"
+  echo "Skipping LibXISF installation"
 fi
 
 # Install INDI core if requested
 if [ "$INSTALL_INDI" = "true" ]; then
+  cd "$ROOTDIR"
   echo "Cleaning up previous INDI installations..."
   [ -f build-indi/install_manifest.txt ] && echo "Deleting INDI"; cat build-indi/install_manifest.txt | sudo xargs rm -f
 
@@ -234,17 +264,18 @@ if [ "$INSTALL_INDI" = "true" ]; then
   sudo make install || { echo "INDI installation failed"; exit 1; }
   cd "$ROOTDIR"
 else
-  echo "Skipping Indi Server installation as requested"
+  echo "Skipping Indi Server installation"
 fi
 
 # Install INDI 3rd party libraries and drivers if requested
 if [ "$INSTALL_3RDPARTY" = true ]; then
-  3RD_PARTY_BUILD_DIR="$ROOTDIR/build-indi-3rdparty"
+  cd "$ROOTDIR"
+  THIRD_PARTY_BUILD_DIR="./build-indi-3rdparty"
 
   # Cleanup 3rd party builds
-  if [ -d "$3RD_PARTY_BUILD_DIR" ]; then
+  if [ -d "$THIRD_PARTY_BUILD_DIR" ]; then
       echo "Cleaning up 3rd party builds..."
-      find "$3RD_PARTY_BUILD_DIR" -name "install_manifest.txt" -exec cat {} \; | sudo xargs rm -f 2>/dev/null || true
+      find "$THIRD_PARTY_BUILD_DIR" -name "install_manifest.txt" -exec cat {} \; | sudo xargs rm -f 2>/dev/null || true
   fi
 
   # Install Dependencies
@@ -252,61 +283,78 @@ if [ "$INSTALL_3RDPARTY" = true ]; then
 
   echo "Installing INDI 3rd party..."
   gitfunction "https://github.com/indilib/indi-3rdparty.git" "indi-3rdparty" "$INDI_3RD_COMMIT"
-  
-  if [ "$INSTALL_ALL_3RDPARTY" = true ]; then
-    # Build all 3rd party drivers
-    echo "Building all INDI 3rd party drivers..."
-    mkdir -p "$3RD_PARTY_BUILD_DIR"
-    cd "$3RD_PARTY_BUILD_DIR"
+  # Build only selected drivers from file
+  echo "Building selected drivers from $LIBS_LIST_FILE..."
+  # Read the list of drivers to build
+  selected_drivers=()
+
+  while IFS= read -r line || [[ -n "$line" ]]; do
+      # Skip comments and empty lines
+      [[ "$line" =~ ^#.*$ ]] || [[ -z "$line" ]] && continue
+      selected_drivers+=("$line")
+  done < "$LIBS_LIST_FILE"
     
-    cmake -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release "$ROOTDIR/indi-3rdparty" || { echo "INDI 3rdparty configuration failed"; exit 1; }
-    make -j $JOBS || { echo "INDI 3rd-party compilation failed"; exit 1; }
-    sudo make install || { echo "INDI 3rdparty installation failed"; exit 1; }
+  if [ ${#selected_drivers[@]} -eq 0 ]; then
+    echo "No valid drivers found in $LIBS_LIST_FILE"
   else
-    # Build only selected drivers from file
-    echo "Building selected drivers from $LIBS_LIST_FILE..."
-    # Read the list of drivers to build
-    selected_drivers=()
-    while IFS= read -r line || [[ -n "$line" ]]; do
-        # Skip comments and empty lines
-        [[ "$line" =~ ^#.*$ ]] || [[ -z "$line" ]] && continue
-        selected_drivers+=("$line")
-    done < "$LIBS_LIST_FILE"
+    echo "Selected drivers: ${selected_drivers[*]}"
     
-    if [ ${#selected_drivers[@]} -eq 0 ]; then
-        echo "No valid drivers found in $LIBS_LIST_FILE"
-    else
-      echo "Selected drivers: ${selected_drivers[*]}"
-      
-      # Build each selected driver individually
-      for driver in "${selected_drivers[@]}"; do
-          echo "Building driver: $driver"
-          
-          # Check if driver directory exists
-          if [ ! -d "$3RD_PARTY_BUILD_DIR/$driver" ]; then
-              echo "Driver directory $driver not found in indi-3rdparty, skipping..."
-              continue
-          fi
-          
-          # Create build directory for this driver
-          build_dir="$3RD_PARTY_BUILD_DIR/$driver"
-          mkdir -p "$build_dir"
-          cd "$build_dir"
-          
-          # Configure and build the driver
-          cmake -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release "$ROOTDIR/indi-3rdparty/$driver" || { echo "Configuration failed for $driver"; continue; }
-          make -j $JOBS || { echo "Compilation failed for $driver"; continue; }
-          sudo make install || { echo "Installation failed for $driver"; continue; }
-      done
-    fi
+    # Build each selected driver individually
+    for driver in "${selected_drivers[@]}"; do
+        echo "Building driver: $driver"
+        
+        # Check if driver directory exists
+        if [ ! -d "$THIRD_PARTY_BUILD_DIR/$driver" ]; then
+            echo "Driver directory $driver not found in indi-3rdparty, skipping..."
+            continue
+        fi
+        
+        # Create build directory for this driver
+        build_dir="$THIRD_PARTY_BUILD_DIR/$driver"
+        mkdir -p "$build_dir"
+        cd "$build_dir"
+        
+        # Configure and build the driver
+        cmake -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release "$ROOTDIR/indi-3rdparty/$driver" || { echo "Configuration failed for $driver"; continue; }
+        make -j $JOBS || { echo "Compilation failed for $driver"; continue; }
+        sudo make install || { echo "Installation failed for $driver"; continue; }
+    done
   fi
   cd "$ROOTDIR"
 else
-  echo "Skipping INDI 3rd party installation as requested"
+  echo "Skipping custom INDI 3rd party installation"
+fi
+
+if [ "$INSTALL_ALL_3RDPARTY" = true ]; then
+  cd "$ROOTDIR"
+  THIRD_PARTY_BUILD_DIR="./build-indi-3rdparty"
+
+  # Cleanup 3rd party builds
+  if [ -d "$THIRD_PARTY_BUILD_DIR" ]; then
+      echo "Cleaning up 3rd party builds..."
+      find "$THIRD_PARTY_BUILD_DIR" -name "install_manifest.txt" -exec cat {} \; | sudo xargs rm -f 2>/dev/null || true
+  fi
+
+  # Install Dependencies
+  install_deps indi-3rdparty
+
+  # Build all 3rd party drivers
+  echo "Building all INDI 3rd party drivers..."
+  mkdir -p "$THIRD_PARTY_BUILD_DIR"
+  cd "$THIRD_PARTY_BUILD_DIR"
+  
+  cmake -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release "$ROOTDIR/indi-3rdparty" || { echo "INDI 3rdparty configuration failed"; exit 1; }
+  make -j $JOBS || { echo "INDI 3rd-party compilation failed"; exit 1; }
+  sudo make install || { echo "INDI 3rdparty installation failed"; exit 1; }
+
+  cd "$ROOTDIR"
+else
+  echo "Skipping All INDI 3rd party installation"
 fi
 
 # Install stellarsolver if requested
 if [ "$INSTALL_STELLAR" = true ]; then
+  cd "$ROOTDIR"
   echo "Cleaning up previous stellarsolver installations..."
   [ -f build-stellarsolver/install_manifest.txt ] && echo "Deleting stellarsolver"; cat build-stellarsolver/install_manifest.txt | sudo xargs rm -f
   
@@ -327,6 +375,7 @@ fi
 
 # Install KStars if requested
 if [ "$INSTALL_KSTARS" = true ]; then
+  cd "$ROOTDIR"
   echo "Cleaning up previous KStars installations..."
   [ -f build-kstars/install_manifest.txt ] && echo "Deleting KStars"; cat build-kstars/install_manifest.txt | sudo xargs rm -f
   
@@ -347,6 +396,7 @@ fi
 
 # Install PHD2 if requested
 if [ "$INSTALL_PHD" = true ]; then
+  cd "$ROOTDIR"
   PHD2_BUILD_DIR=$ROOTDIR/build_phd2
 
   # Cleanup 3rd party builds
@@ -361,8 +411,8 @@ if [ "$INSTALL_PHD" = true ]; then
   echo "Installing PHD2 ($PHD_COMMIT)..."
   gitfunction "https://github.com/OpenPHDGuiding/phd2.git" "phd2" "$PHD_COMMIT"
 
-  mkdir -p "$3RD_PARTY_BUILD_DIR"
-  cd "$3RD_PARTY_BUILD_DIR"
+  mkdir -p "$THIRD_PARTY_BUILD_DIR"
+  cd "$THIRD_PARTY_BUILD_DIR"
     
   cmake -DCMAKE_BUILD_TYPE=Release "$ROOTDIR/phd2" || { echo "PHD2 configuration failed"; exit 1; }
   make -j $JOBS || { echo "PHD2 compilation failed"; exit 1; }

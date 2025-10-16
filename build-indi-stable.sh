@@ -349,6 +349,12 @@ if [ "$INSTALL_ALL_3RDPARTY" = true ]; then
   cd "$ROOTDIR"
   THIRD_PARTY_BUILD_DIR="$ROOTDIR/build-indi-3rdparty"
 
+  # Cleanup 3rd party builds
+  if [ -d "$THIRD_PARTY_BUILD_DIR" ]; then
+      echo "Cleaning up 3rd party builds..."
+      find "$THIRD_PARTY_BUILD_DIR" -name "install_manifest.txt" -exec cat {} \; | sudo xargs rm -f 2>/dev/null || true
+  fi
+
   # Verify the source directory exists
   if [ ! -d "$ROOTDIR/indi-3rdparty" ]; then
       echo "Source directory indi-3rdparty not found in $ROOTDIR."

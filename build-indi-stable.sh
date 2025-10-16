@@ -342,9 +342,12 @@ else
   echo "Skipping custom INDI 3rd party installation"
 fi
 
+# Build all 3rd-party drivers if requested
 if [ "$INSTALL_ALL_3RDPARTY" = true ]; then
+  echo "Building all INDI 3rd-party drivers..."
+
   cd "$ROOTDIR"
-  THIRD_PARTY_BUILD_DIR="./build-indi-3rdparty"
+  THIRD_PARTY_BUILD_DIR="$ROOTDIR/build-indi-3rdparty"
 
   # Cleanup 3rd party builds
   if [ -d "$THIRD_PARTY_BUILD_DIR" ]; then
@@ -352,22 +355,43 @@ if [ "$INSTALL_ALL_3RDPARTY" = true ]; then
       find "$THIRD_PARTY_BUILD_DIR" -name "install_manifest.txt" -exec cat {} \; | sudo xargs rm -f 2>/dev/null || true
   fi
 
-  # Install Dependencies
-  install_deps indi-3rdparty
+  # Verify the source directory exists
+  if [ ! -d "$ROOTDIR/indi-3rdparty" ]; then
+      echo "Source directory indi-3rdparty not found in $ROOTDIR."
+      echo "Cannot proceed with building all 3rd-party drivers."
+      exit 1
+  fi
 
-  # Build all 3rd party drivers
-  echo "Building all INDI 3rd party drivers..."
-  mkdir -p "$THIRD_PARTY_BUILD_DIR"
-  cd "$THIRD_PARTY_BUILD_DIR"
-  
-  cmake -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release "$ROOTDIR/indi-3rdparty" || { echo "INDI 3rdparty configuration failed"; exit 1; }
-  make -j $JOBS || { echo "INDI 3rd-party compilation failed"; exit 1; }
-  sudo make install || { echo "INDI 3rdparty installation failed"; exit 1; }
+  # Ensure the 3rd-party build root exists
+  mkdir -p "$THIRD_PARTY_BUILD_DIR" || {
+      echo "Failed to create 3rd-party build directory: $THIRD_PARTY_BUILD_DIR"
+      exit 1
+  }
+
+  cd "$THIRD_PARTY_BUILD_DIR" || {
+      echo "Failed to enter 3rd-party build directory: $THIRD_PARTY_BUILD_DIR"
+      exit 1
+  }
+
+  echo "Configuring and building all drivers in indi-3rdparty..."
+
+  # Configure the build
+  cmake -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release "$ROOTDIR/indi-3rdparty" \
+      || { echo "CMake configuration failed for indi-3rdparty"; exit 1; }
+
+  # Compile
+  make -j "$JOBS" || { echo "Compilation failed for indi-3rdparty"; exit 1; }
+
+  # Install
+  sudo make install || { echo "Installation failed for indi-3rdparty"; exit 1; }
+
+  echo "All INDI 3rd-party drivers built and installed successfully."
 
   cd "$ROOTDIR"
-else
-  echo "Skipping All INDI 3rd party installation"
+  else
+    echo "Skipping All INDI 3rd party installation"
 fi
+
 
 # Install stellarsolver if requested
 if [ "$INSTALL_STELLAR" = true ]; then

@@ -388,6 +388,8 @@ if [ "$INSTALL_ALL_3RDPARTY" = true ]; then
   echo "All INDI 3rd-party drivers built and installed successfully."
 
   cd "$ROOTDIR"
+  else
+    echo "Skipping All INDI 3rd party installation"
 fi
 
 

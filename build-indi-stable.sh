@@ -206,6 +206,9 @@ gitfunction() {
   local target_dir=$2
   local commit=$3
 
+  echo "Working directory:"
+  pwd
+
   if [ ! -d "$target_dir/.git" ]; then
     echo "Cloning $repo_url into $target_dir at $commit..."
     git clone --branch "$commit" --depth=1 "$repo_url" "$target_dir" || { echo "Failed to clone $repo_url"; exit 1; }
@@ -270,11 +273,11 @@ fi
 # Install INDI 3rd party libraries and drivers if requested
 if [ "$INSTALL_3RDPARTY" = true ]; then
   cd "$ROOTDIR"
-  THIRD_PARTY_BUILD_DIR="./build-indi-3rdparty"
+  THIRD_PARTY_BUILD_DIR="$ROOTDIR/build-indi-3rdparty"
 
   # Cleanup 3rd party builds
   if [ -d "$THIRD_PARTY_BUILD_DIR" ]; then
-      echo "Cleaning up 3rd party builds..."
+      echo "Cleaning up 3rd party builds from $THIRD_PARTY_BUILD_DIR"
       find "$THIRD_PARTY_BUILD_DIR" -name "install_manifest.txt" -exec cat {} \; | sudo xargs rm -f 2>/dev/null || true
   fi
 
@@ -302,23 +305,37 @@ if [ "$INSTALL_3RDPARTY" = true ]; then
     # Build each selected driver individually
     for driver in "${selected_drivers[@]}"; do
         echo "Building driver: $driver"
-        
-        # Check if driver directory exists
-        if [ ! -d "$THIRD_PARTY_BUILD_DIR/$driver" ]; then
-            echo "Driver directory $driver not found in indi-3rdparty, skipping..."
+
+        driver_dir="$THIRD_PARTY_BUILD_DIR/$driver"
+        source_dir="$ROOTDIR/indi-3rdparty/$driver"
+
+        # Ensure build directory exists
+        if [ ! -d "$driver_dir" ]; then
+            echo "Driver build directory not found. Creating: $driver_dir"
+            mkdir -p "$driver_dir" || { echo "Failed to create $driver_dir"; continue; }
+        fi
+
+        # Check source directory exists (required for cmake)
+        if [ ! -d "$source_dir" ]; then
+            echo "Warning: Source directory not found for $driver → $source_dir"
+            echo "Skipping since no source to build from."
             continue
         fi
-        
-        # Create build directory for this driver
-        build_dir="$THIRD_PARTY_BUILD_DIR/$driver"
-        mkdir -p "$build_dir"
-        cd "$build_dir"
-        
+
+        cd "$driver_dir" || { echo "Failed to enter $driver_dir"; continue; }
+
+        echo "Working Directory:"
+        pwd
+
         # Configure and build the driver
-        cmake -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release "$ROOTDIR/indi-3rdparty/$driver" || { echo "Configuration failed for $driver"; continue; }
-        make -j $JOBS || { echo "Compilation failed for $driver"; continue; }
+        cmake -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release "$source_dir" \
+          || { echo "Configuration failed for $driver"; continue; }
+
+        make -j "$JOBS" || { echo "Compilation failed for $driver"; continue; }
+
         sudo make install || { echo "Installation failed for $driver"; continue; }
     done
+
   fi
   cd "$ROOTDIR"
 else

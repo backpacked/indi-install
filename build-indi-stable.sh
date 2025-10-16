@@ -344,39 +344,44 @@ fi
 
 # Build all 3rd-party drivers if requested
 if [ "$INSTALL_ALL_3RDPARTY" = true ]; then
-    echo "Building all INDI 3rd-party drivers..."
+  echo "Building all INDI 3rd-party drivers..."
 
-    # Verify the source directory exists
-    if [ ! -d "$ROOTDIR/indi-3rdparty" ]; then
-        echo "Source directory indi-3rdparty not found in $ROOTDIR."
-        echo "Cannot proceed with building all 3rd-party drivers."
-        exit 1
-    fi
+  cd "$ROOTDIR"
+  THIRD_PARTY_BUILD_DIR="$ROOTDIR/build-indi-3rdparty"
 
-    # Ensure the 3rd-party build root exists
-    mkdir -p "$THIRD_PARTY_BUILD_DIR" || {
-        echo "Failed to create 3rd-party build directory: $THIRD_PARTY_BUILD_DIR"
-        exit 1
-    }
+  # Verify the source directory exists
+  if [ ! -d "$ROOTDIR/indi-3rdparty" ]; then
+      echo "Source directory indi-3rdparty not found in $ROOTDIR."
+      echo "Cannot proceed with building all 3rd-party drivers."
+      exit 1
+  fi
 
-    cd "$THIRD_PARTY_BUILD_DIR" || {
-        echo "Failed to enter 3rd-party build directory: $THIRD_PARTY_BUILD_DIR"
-        exit 1
-    }
+  # Ensure the 3rd-party build root exists
+  mkdir -p "$THIRD_PARTY_BUILD_DIR" || {
+      echo "Failed to create 3rd-party build directory: $THIRD_PARTY_BUILD_DIR"
+      exit 1
+  }
 
-    echo "Configuring and building all drivers in indi-3rdparty..."
+  cd "$THIRD_PARTY_BUILD_DIR" || {
+      echo "Failed to enter 3rd-party build directory: $THIRD_PARTY_BUILD_DIR"
+      exit 1
+  }
 
-    # Configure the build
-    cmake -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release "$ROOTDIR/indi-3rdparty" \
-        || { echo "CMake configuration failed for indi-3rdparty"; exit 1; }
+  echo "Configuring and building all drivers in indi-3rdparty..."
 
-    # Compile
-    make -j "$JOBS" || { echo "Compilation failed for indi-3rdparty"; exit 1; }
+  # Configure the build
+  cmake -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release "$ROOTDIR/indi-3rdparty" \
+      || { echo "CMake configuration failed for indi-3rdparty"; exit 1; }
 
-    # Install
-    sudo make install || { echo "Installation failed for indi-3rdparty"; exit 1; }
+  # Compile
+  make -j "$JOBS" || { echo "Compilation failed for indi-3rdparty"; exit 1; }
 
-    echo "All INDI 3rd-party drivers built and installed successfully."
+  # Install
+  sudo make install || { echo "Installation failed for indi-3rdparty"; exit 1; }
+
+  echo "All INDI 3rd-party drivers built and installed successfully."
+
+  cd "$ROOTDIR"
 fi
 
 

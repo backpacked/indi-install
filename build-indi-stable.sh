@@ -302,7 +302,7 @@ if [ "$INSTALL_3RDPARTY" = true ]; then
   else
     echo "Selected drivers: ${selected_drivers[*]}"
     
-    # Build each selected driver individually
+    # Build each selected driver individually.
     for driver in "${selected_drivers[@]}"; do
         echo "Building driver: $driver"
 

@@ -9,10 +9,10 @@ SCRIPT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Default values
 LIBXISF_COMMIT="v0.2.13"
-INDI_COMMIT="v2.1.5"
-INDI_3RD_COMMIT="v2.1.5"
+INDI_COMMIT="v2.1.7"
+INDI_3RD_COMMIT="v2.1.7"
 STELLAR_COMMIT="2.7"
-KSTARS_COMMIT="stable-3.7.8"
+KSTARS_COMMIT="stable-3.8.0"
 PHD_COMMIT="v2.6.12"
 
 INSTALL_INDI=false
@@ -23,6 +23,14 @@ INSTALL_STELLAR=false
 INSTALL_KSTARS=false
 INSTALL_PHD=false
 LIBS_LIST_FILE=""
+
+# Repos
+LIBXISF="https://gitea.nouspiro.space/nou/libXISF.git"
+INDI_CORE="https://github.com/indilib/indi.git"
+INDI_3RDPARTY="https://github.com/indilib/indi-3rdparty.git"
+KSTARS="https://invent.kde.org/education/kstars.git"
+STELLAR="https://github.com/rlancaste/stellarsolver.git"
+PHD2="https://github.com/OpenPHDGuiding/phd2.git"
 
 # Function to display usage
 usage() {
@@ -426,7 +434,8 @@ if [ "$INSTALL_KSTARS" = true ]; then
   echo "Installing KStars..."
   gitfunction "https://invent.kde.org/education/kstars.git" "kstars" "$KSTARS_COMMIT"
 
-  [ ! -d ../build-kstars ] && { cmake -B ../build-kstars -DBUILD_TESTING=Off ../kstars -DCMAKE_BUILD_TYPE=Release || { echo "KStars configuration failed"; exit 1; } }
+  [ ! -d ../build-kstars ] && { cmake -B ../build-kstars -DCMAKE_BUILD_TYPE=RelWithDebInfo ../kstars || { echo "KStars configuration failed"; exit 1; } }
+  
   cd ../build-kstars
   make -j $JOBS || { echo "KStars compilation failed"; exit 1; }
   sudo make install || { echo "KStars installation failed"; exit 1; }

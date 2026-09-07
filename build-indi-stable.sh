@@ -9,10 +9,10 @@ SCRIPT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Default values
 LIBXISF_COMMIT="v0.2.13"
-INDI_COMMIT="v2.1.7"
-INDI_3RD_COMMIT="v2.1.7"
-STELLAR_COMMIT="2.7"
-KSTARS_COMMIT="stable-3.8.0"
+INDI_COMMIT="v2.2.4"
+INDI_3RD_COMMIT="v2.2.4"
+STELLAR_COMMIT="2.8"
+KSTARS_COMMIT="v2.9.8"
 PHD_COMMIT="v2.6.14"
 
 INSTALL_INDI=false
@@ -418,7 +418,7 @@ if [ "$INSTALL_STELLAR" = true ]; then
   echo "Installing stellarsolver..."
   gitfunction "${STELLAR_GIT}" "stellarsolver" "$STELLAR_COMMIT"
 
-  cd linux-scripts
+  cd $ROOTDIR/stellarsolver/linux-scripts
   ./installStellarSolverTesterQt6.sh
 
   # [ ! -d ../build-stellarsolver ] && { cmake -B ../build-stellarsolver ../stellarsolver -DCMAKE_BUILD_TYPE=Release || { echo "Stellarsolver configuration failed"; exit 1; } }

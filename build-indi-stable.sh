@@ -9,11 +9,11 @@ SCRIPT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Default values
 LIBXISF_COMMIT="v0.2.13"
-INDI_COMMIT="v2.1.7"
-INDI_3RD_COMMIT="v2.1.7"
-STELLAR_COMMIT="2.7"
-KSTARS_COMMIT="stable-3.8.0"
-PHD_COMMIT="v2.6.12"
+INDI_COMMIT="v2.2.4"
+INDI_3RD_COMMIT="v2.2.4"
+STELLAR_COMMIT="2.8"
+KSTARS_COMMIT="v2.9.8"
+PHD_COMMIT="v2.6.14"
 
 INSTALL_INDI=false
 INSTALL_LIBXISF=false
@@ -25,12 +25,12 @@ INSTALL_PHD=false
 LIBS_LIST_FILE=""
 
 # Repos
-LIBXISF="https://gitea.nouspiro.space/nou/libXISF.git"
-INDI_CORE="https://github.com/indilib/indi.git"
-INDI_3RDPARTY="https://github.com/indilib/indi-3rdparty.git"
-KSTARS="https://invent.kde.org/education/kstars.git"
-STELLAR="https://github.com/rlancaste/stellarsolver.git"
-PHD2="https://github.com/OpenPHDGuiding/phd2.git"
+LIBXISF_GIT="https://gitea.nouspiro.space/nou/libXISF.git"
+INDI_CORE_GIT="https://github.com/indilib/indi.git"
+INDI_3RDPARTY_GIT="https://github.com/indilib/indi-3rdparty.git"
+STELLAR_GIT="https://github.com/rlancaste/stellarsolver.git"
+KSTARS_GIT="https://invent.kde.org/education/kstars.git"
+PHD2_GIT="https://github.com/OpenPHDGuiding/phd2.git"
 
 # Function to display usage
 usage() {
@@ -159,16 +159,15 @@ if [[ -n "$LIBS_LIST_FILE" ]]; then
 fi
 
 BUILD_DIR=${BUILD_DIR:-$HOME/Projects}
-ROOTDIR="$BUILD_DIR/indi-build-stable"
+ROOTDIR="$BUILD_DIR/indi-build"
 
 JOBS=$(grep -c ^processor /proc/cpuinfo)
 
 # 64 bit systems need more memory for compilation
-if [ $(getconf LONG_BIT) -eq 64 ] && [ $(grep MemTotal < /proc/meminfo | cut -f 2 -d ':' | sed s/kB//) -lt 5000000 ]
-then
-  echo "Low memory limiting to JOBS=2"
-  JOBS=2
-fi
+if [ $(getconf LONG_BIT) -eq 64 ] && [ $(grep MemTotal < /proc/meminfo | cut -f 2 -d ':' | sed s/kB//) -lt 5000000 ]; then
+    echo "Low memory limiting to JOBS=2"
+    JOBS=2
+  fi
 
 [ ! -d "$BUILD_DIR" ] && mkdir -p "$BUILD_DIR"
 [ ! -d "$ROOTDIR" ] && mkdir -p "$ROOTDIR"
@@ -187,21 +186,23 @@ install_deps() {
           libjpeg-dev libcurl4-gnutls-dev libtiff-dev libfftw3-dev libftdi-dev libgps-dev libraw-dev libdc1394-dev libgphoto2-dev \
           libboost-dev libboost-regex-dev librtlsdr-dev liblimesuite-dev libftdi1-dev libavcodec-dev libavdevice-dev libzmq3-dev libudev-dev \
           cdbs dkms fxload libkrb5-dev libtheora-dev libindi-dev libev-dev
+
       ;;
     kstars)
       echo "Installing system dependencies for KStars..."
       sudo apt -y install build-essential cmake git libstellarsolver-dev libeigen3-dev libcfitsio-dev zlib1g-dev extra-cmake-modules \
-          libkf5plotting-dev libqt5svg5-dev libkf5xmlgui-dev libkf5kio-dev kinit-dev libkf5newstuff-dev libkf5doctools-dev \
-          libkf5notifications-dev qtdeclarative5-dev libkf5crash-dev gettext libnova-dev libgsl-dev libraw-dev libkf5notifyconfig-dev \
-          wcslib-dev libqt5websockets5-dev xplanet xplanet-images qt5keychain-dev libsecret-1-dev breeze-icon-theme libqt5datavisualization5-dev
+        libkf5plotting-dev libqt5svg5-dev libkf5xmlgui-dev libkf5kio-dev kinit-dev libkf5newstuff-dev libkf5doctools-dev \
+        libkf5notifications-dev qtdeclarative5-dev libkf5crash-dev gettext libnova-dev libgsl-dev libraw-dev libkf5notifyconfig-dev \
+        wcslib-dev libqt5websockets5-dev xplanet xplanet-images qt5keychain-dev libsecret-1-dev breeze-icon-theme libqt5datavisualization5-dev
       ;;
     stellarsolver)
       echo "Installing system dependencies for StellarSolver..."
-      sudo apt -y install qtbase5-dev wcslib-dev libcfitsio-dev libgsl-dev
+      sudo apt -y install g++ git cmake qt6-base-dev libgl1-mesa-dev libcfitsio-dev libgsl-dev wcslib-dev
       ;;
     phd2)
       echo "Installing system dependencies for PHD2..."
-      sudo apt -y install libwxgtk3.2-dev libeigen3-dev
+      sudo apt-get -y install build-essential git cmake pkg-config libwxgtk3.2-dev wx-common wx3.2-i18n libindi-dev libnova-dev gettext \
+        zlib1g-dev libx11-dev libcurl4-gnutls-dev libopencv-dev libeigen3-dev libgtest-dev
       ;;
     *)
       echo "Unknown component: $component"
@@ -242,17 +243,19 @@ gitfunction() {
 # Install LibXISF if requested
 if [ "$INSTALL_LIBXISF" = true ]; then
   cd "$ROOTDIR"
-  echo "Cleaning up previous LibXISF installations..."
-  [ -f build-libXISF/install_manifest.txt ] && echo "Deleting libXISF"; cat build-libXISF/install_manifest.txt | sudo xargs rm -f
-  
+
   echo "Installing LibXISF..."
-  gitfunction "https://gitea.nouspiro.space/nou/libXISF.git" "libXISF" "$LIBXISF_COMMIT"
+  gitfunction "${LIBXISF_GIT}" "libXISF" "$LIBXISF_COMMIT"
   
-  [ ! -d ../build-libXISF ] && { cmake -B ../build-libXISF ../libXISF -DCMAKE_BUILD_TYPE=Release -DUSE_BUNDLED_ZLIB=OFF || { echo "LibXISF configuration failed"; exit 1; } }
-  cd ../build-libXISF
-  make -j $JOBS || { echo "LibXISF compilation failed"; exit 1; }
-  sudo make install || { echo "LibXISF installation failed"; exit 1; }
+  cmake -B build -DUSE_BUNDLED_ZLIB=OFF -S .
+  cmake --build build --parallel
+  sudo cmake --install build
+
   cd "$ROOTDIR"
+
+  echo "Clean Up"
+  rm -rf libXISF
+
 else
   echo "Skipping LibXISF installation"
 fi
@@ -260,19 +263,17 @@ fi
 # Install INDI core if requested
 if [ "$INSTALL_INDI" = "true" ]; then
   cd "$ROOTDIR"
-  echo "Cleaning up previous INDI installations..."
-  [ -f build-indi/install_manifest.txt ] && echo "Deleting INDI"; cat build-indi/install_manifest.txt | sudo xargs rm -f
 
   # Install Dependencies
   install_deps indi
 
   echo "Installing INDI core..."
-  gitfunction "https://github.com/indilib/indi.git" "indi" "$INDI_COMMIT"
+  gitfunction "${INDI_CORE_GIT}" "indi" "$INDI_COMMIT"
 
-  [ ! -d ../build-indi ] && { cmake -B ../build-indi ../indi -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release || { echo "INDI configuration failed"; exit 1; } }
-  cd ../build-indi
-  make -j $JOBS || { echo "INDI compilation failed"; exit 1; }
-  sudo make install || { echo "INDI installation failed"; exit 1; }
+  cmake -B build -G Ninja -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release
+  cmake --build build
+  sudo cmake --install build
+
   cd "$ROOTDIR"
 else
   echo "Skipping Indi Server installation"
@@ -283,17 +284,18 @@ if [ "$INSTALL_3RDPARTY" = true ]; then
   cd "$ROOTDIR"
   THIRD_PARTY_BUILD_DIR="$ROOTDIR/build-indi-3rdparty"
 
-  # Cleanup 3rd party builds
-  if [ -d "$THIRD_PARTY_BUILD_DIR" ]; then
-      echo "Cleaning up 3rd party builds from $THIRD_PARTY_BUILD_DIR"
-      find "$THIRD_PARTY_BUILD_DIR" -name "install_manifest.txt" -exec cat {} \; | sudo xargs rm -f 2>/dev/null || true
-  fi
+  # # Cleanup 3rd party builds
+  # if [ -d "$THIRD_PARTY_BUILD_DIR" ]; then
+  #     echo "Cleaning up 3rd party builds from $THIRD_PARTY_BUILD_DIR"
+  #     find "$THIRD_PARTY_BUILD_DIR" -name "install_manifest.txt" -exec cat {} \; | sudo xargs rm -f 2>/dev/null || true
+  # fi
 
   # Install Dependencies
   install_deps indi-3rdparty
 
   echo "Installing INDI 3rd party..."
-  gitfunction "https://github.com/indilib/indi-3rdparty.git" "indi-3rdparty" "$INDI_3RD_COMMIT"
+  gitfunction "${INDI_3RDPARTY_GIT}" "indi-3rdparty" "$INDI_3RD_COMMIT"
+
   # Build only selected drivers from file
   echo "Building selected drivers from $LIBS_LIST_FILE..."
   # Read the list of drivers to build
@@ -336,7 +338,7 @@ if [ "$INSTALL_3RDPARTY" = true ]; then
         pwd
 
         # Configure and build the driver
-        cmake -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release "$source_dir" \
+        cmake  -DINDI_BUILD_UNITTESTS=FALSE -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release "$source_dir" \
           || { echo "Configuration failed for $driver"; continue; }
 
         make -j "$JOBS" || { echo "Compilation failed for $driver"; continue; }
@@ -346,6 +348,7 @@ if [ "$INSTALL_3RDPARTY" = true ]; then
 
   fi
   cd "$ROOTDIR"
+  rm -rf indi-3rdparty
 else
   echo "Skipping custom INDI 3rd party installation"
 fi
@@ -396,6 +399,7 @@ if [ "$INSTALL_ALL_3RDPARTY" = true ]; then
   echo "All INDI 3rd-party drivers built and installed successfully."
 
   cd "$ROOTDIR"
+  rm -rf indi-3rdparty
   else
     echo "Skipping All INDI 3rd party installation"
 fi
@@ -404,20 +408,26 @@ fi
 # Install stellarsolver if requested
 if [ "$INSTALL_STELLAR" = true ]; then
   cd "$ROOTDIR"
-  echo "Cleaning up previous stellarsolver installations..."
-  [ -f build-stellarsolver/install_manifest.txt ] && echo "Deleting stellarsolver"; cat build-stellarsolver/install_manifest.txt | sudo xargs rm -f
+
+  # echo "Cleaning up previous stellarsolver installations..."
+  # [ -f build-stellarsolver/install_manifest.txt ] && echo "Deleting stellarsolver"; cat build-stellarsolver/install_manifest.txt | sudo xargs rm -f
   
   # Install Dependencies
-  install_deps stellarsolver
+  # install_deps stellarsolver
   
   echo "Installing stellarsolver..."
-  gitfunction "https://github.com/rlancaste/stellarsolver.git" "stellarsolver" "$STELLAR_COMMIT"
+  gitfunction "${STELLAR_GIT}" "stellarsolver" "$STELLAR_COMMIT"
 
-  [ ! -d ../build-stellarsolver ] && { cmake -B ../build-stellarsolver ../stellarsolver -DCMAKE_BUILD_TYPE=Release || { echo "Stellarsolver configuration failed"; exit 1; } }
-  cd ../build-stellarsolver
-  make -j $JOBS || { echo "Stellarsolver compilation failed"; exit 1; }
-  sudo make install || { echo "Stellarsolver installation failed"; exit 1; }
+  cd $ROOTDIR/stellarsolver/linux-scripts
+  ./installStellarSolverTesterQt6.sh
+
+  # [ ! -d ../build-stellarsolver ] && { cmake -B ../build-stellarsolver ../stellarsolver -DCMAKE_BUILD_TYPE=Release || { echo "Stellarsolver configuration failed"; exit 1; } }
+  # cd ../build-stellarsolver
+  # make -j $(expr $(nproc) + 2) || { echo "Stellarsolver compilation failed"; exit 1; }
+  # sudo make install || { echo "Stellarsolver installation failed"; exit 1; }
+
   cd "$ROOTDIR"
+
 else
   echo "Skipping stellarsolver installation"
 fi
@@ -425,21 +435,34 @@ fi
 # Install KStars if requested
 if [ "$INSTALL_KSTARS" = true ]; then
   cd "$ROOTDIR"
-  echo "Cleaning up previous KStars installations..."
-  [ -f build-kstars/install_manifest.txt ] && echo "Deleting KStars"; cat build-kstars/install_manifest.txt | sudo xargs rm -f
+  KSTARS_BUILD_DIR=$ROOTDIR/build_kstars
+
+  # echo "Cleaning up previous KStars installations..."
+  # [ -f build-kstars/install_manifest.txt ] && echo "Deleting KStars"; cat build-kstars/install_manifest.txt | sudo xargs rm -f
   
   # Install Dependencies
   install_deps kstars
 
   echo "Installing KStars..."
-  gitfunction "https://invent.kde.org/education/kstars.git" "kstars" "$KSTARS_COMMIT"
+  gitfunction "${KSTARS_GIT}" "kstars" "$KSTARS_COMMIT"
 
-  [ ! -d ../build-kstars ] && { cmake -B ../build-kstars -DCMAKE_BUILD_TYPE=RelWithDebInfo ../kstars || { echo "KStars configuration failed"; exit 1; } }
-  
-  cd ../build-kstars
+  # Ensure the kstars build root exists
+  mkdir -p "$KSTARS_BUILD_DIR" || {
+      echo "Failed to create kstars build directory: $KSTARS_BUILD_DIR"
+      exit 1
+  }
+
+  # Ensure the kstars build root exists
+  cd "$KSTARS_BUILD_DIR" || {
+      echo "Failed to enter kstars build directory: $KSTARS_BUILD_DIR"
+      exit 1
+  }
+
+  cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo "$ROOTDIR/kstars" || { echo "KStars configuration failed"; exit 1; }
   make -j $JOBS || { echo "KStars compilation failed"; exit 1; }
   sudo make install || { echo "KStars installation failed"; exit 1; }
   cd "$ROOTDIR"
+
 else
   echo "Skipping KStars installation"
 fi
@@ -449,26 +472,39 @@ if [ "$INSTALL_PHD" = true ]; then
   cd "$ROOTDIR"
   PHD2_BUILD_DIR=$ROOTDIR/build_phd2
 
-  # Cleanup 3rd party builds
-  if [ -d "$PHD2_BUILD_DIR" ]; then
-      echo "Cleaning up previous PHD2 installations..."
-      find "$PHD2_BUILD_DIR" -name "install_manifest.txt" -exec cat {} \; | sudo xargs rm -f 2>/dev/null || true
-  fi
+  # Cleanup phd2 installs
+  # if [ -d "$PHD2_BUILD_DIR" ]; then
+  #     echo "Cleaning up previous PHD2 installations..."
+  #     find "$PHD2_BUILD_DIR" -name "install_manifest.txt" -exec cat {} \; | sudo xargs rm -f 2>/dev/null || true
+  # fi
 
   # Install Dependencies
   install_deps phd2
   
   echo "Installing PHD2 ($PHD_COMMIT)..."
-  gitfunction "https://github.com/OpenPHDGuiding/phd2.git" "phd2" "$PHD_COMMIT"
+  gitfunction "${PHD2_GIT}" "phd2" "$PHD_COMMIT"
 
-  mkdir -p "$THIRD_PARTY_BUILD_DIR"
-  cd "$THIRD_PARTY_BUILD_DIR"
-    
-  cmake -DCMAKE_BUILD_TYPE=Release "$ROOTDIR/phd2" || { echo "PHD2 configuration failed"; exit 1; }
+  # Ensure the phd2 build root exists
+  mkdir -p "$PHD2_BUILD_DIR" || {
+      echo "Failed to create phd2 build directory: $PHD2_BUILD_DIR"
+      exit 1
+  }
+
+  # Ensure the phd2 build root exists
+  cd "$PHD2_BUILD_DIR" || {
+      echo "Failed to enter phd2 build directory: $PHD2_BUILD_DIR"
+      exit 1
+  }
+  
+  echo "Configuring and building phd2"
+
+  cmake -DUSE_SYSTEM_LIBINDI=1 -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release "$ROOTDIR/phd2" || { echo "PHD2 configuration failed"; exit 1; }
   make -j $JOBS || { echo "PHD2 compilation failed"; exit 1; }
   sudo make install || { echo "PHD2 installation failed"; exit 1; }
 
   cd "$ROOTDIR"
+  rm -rf phd2
+
 else
   echo "Skipping PHD2 installation"
 fi
